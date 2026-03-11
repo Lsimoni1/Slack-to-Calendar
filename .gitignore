@@ -1,0 +1,11 @@
+# Environment and credentials
+  config.py
+  credentials.json
+  token.json
+
+  # Python
+  __pycache__/
+  *.pyc
+
+  # macOS
+  .DS_Store
