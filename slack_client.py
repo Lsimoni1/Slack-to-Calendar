@@ -21,14 +21,14 @@ def fetch_new_schedule():
 
     for message in messages["messages"]:
         if "files" in message: 
-            if message["files"][0]["ts"] > latest_ts:
+            if message["ts"] > latest_ts:
                 files.append(message)
 
     if not files:
         return None
     
     with open("latest_processed_file", "w") as f:
-        f.write(files[-1]["ts"])
+        f.write(files[0]["ts"])
     return files
 
 def download_schedules():
@@ -36,7 +36,7 @@ def download_schedules():
     if not files:
         return
     
-    url = files[-1]["files"][0]["url_private"]
+    url = files[0]["files"][0]["url_private"]
     headers = {
         "Authorization" : "Bearer " + slack_token
     }
