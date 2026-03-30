@@ -1,6 +1,7 @@
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from config import MY_NAME, TIMEZONE
 from datetime import datetime
 import os
@@ -13,10 +14,23 @@ def get_calendar_service():
             f.write(credential.to_json())
     else:
         credential = Credentials.from_authorized_user_file("token.json")
+        if credential.expired:
+            try:
+                credential.refresh(Request())
+                with open("token.json", "w") as f:
+                    f.write(credential.to_json())
+                credential = Credentials.from_authorized_user_file("token.json")
+            except:
+                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", "https://www.googleapis.com/auth/calendar")
+                credential = flow.run_local_server(port = 0)
+                with open("token.json", "w") as f:
+                    f.write(credential.to_json())
     return build("calendar", "v3", credentials = credential)
 
 def create_events(dates, schedule):
     service = get_calendar_service()
+    if len(dates) > 8:
+        next_month = dates[8]
     info = tuple(zip(dates, schedule))
     year = datetime.now().year
 
@@ -28,6 +42,8 @@ def create_events(dates, schedule):
             pass
         else:
             day = pair[0]
+            if day == "1":
+                month = next_month
             time = pair[1].split("-")
 
             start_time = time[0]
