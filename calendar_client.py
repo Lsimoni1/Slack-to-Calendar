@@ -19,7 +19,6 @@ def get_calendar_service():
                 credential.refresh(Request())
                 with open("token.json", "w") as f:
                     f.write(credential.to_json())
-                credential = Credentials.from_authorized_user_file("token.json")
             except:
                 flow = InstalledAppFlow.from_client_secrets_file("credentials.json", "https://www.googleapis.com/auth/calendar")
                 credential = flow.run_local_server(port = 0)

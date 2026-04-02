@@ -2,6 +2,15 @@ import pdfplumber
 import config
 from datetime import datetime
 
+months = dict([
+               ("Jan" , "January"), ("January", "January"), ("Feb", "February"), ("February", "February"),
+               ("Mar", "March"), ("March", "March"), ("Apr", "April"), ("April", "April"),
+               ("Jun", "June"), ("June", "June"), ("May", "May"),
+               ("Jul", "July"), ("July", "July"), ("Aug", "August"), ("August", "August"), 
+               ("Sept", "September"), ("September", "September"), ("Oct", "October"), ("October", "October"), 
+               ("Nov", "November"), ("November", "November"), ("Dec", "December"), ("December", "December")
+            ])
+
 def pdf_to_schedule(file):
     pdf = pdfplumber.open(file)
     data = pdf.pages[0].extract_table()
@@ -14,13 +23,12 @@ def pdf_to_schedule(file):
 def pdf_to_dates(file):
     pdf = pdfplumber.open(file)
     data = pdf.pages[0].extract_table()
-    months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
     for row in data:
-        for month in months:
-                if month in row[0]:
-                    row[0] = month
-                    return row
+        for k, v in months.items(): 
+            if k in row[0]:
+                row[0] = v
+                return row
     return None
 
 def sort_dates(dates):
