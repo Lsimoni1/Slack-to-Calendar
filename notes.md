@@ -1,19 +1,18 @@
 # Slack to Calendar - Project Notes
 
 ## What it does
-Detects when a new work schedule is posted as an image/PDF in Slack,
-extracts shifts using OCR, and creates Google Calendar events automatically.
+Detects when a new work schedule is posted as an image/PDF in the specified Slack channel,
+extracts shifts using table extraction via pdfplumber, and creates accurate Google Calendar events automatically.
 
 ---
 
-## Tech Stack (decided)
+## Final Tech Stack
 
 | Component         | Decision                                      |
 |-------------------|-----------------------------------------------|
 | Language          | Python                                        |
 | Slack integration | Slack Web API (polling)                       |
-| OCR               | Tesseract via pytesseract                     |
-| PDF handling      | pdf2image                                     |
+| Table extraction  | pdfplumber                                    |
 | Calendar          | Google Calendar API                           |
 | Scheduling        | cron job, runs once daily                     |
 | State tracking    | Simple file storing last processed message ID |
@@ -22,26 +21,37 @@ extracts shifts using OCR, and creates Google Calendar events automatically.
 
 ---
 
-## Still Researching
+## Refactored out
 
-- Slack Web API vs Slack Bolt SDK (DECIDED - info below)
+| Tool                     | Decision                                      |
+|--------------------------|-----------------------------------------------|
+| Pytesseract (OCR)        | Not suitable for table-based text parsing,    |
+|                          | flat image processing lead to inaccurate      |
+|                          | parsing of text.                              |
+| pdf2image (PDF handling) | Unnecessary without OCR tool usage.           |
+
+---
+
+## Pre-Implementation Research & Decisions
+
+- Slack Web API vs Slack Bolt SDK (DECIDED - see Pre-implementation Log)
     - Is Bolt worth using for a polling-based app or is it overkill?
 
-- Tesseract vs Google Cloud Vision (DECIDED - info below)
+- Tesseract vs Google Cloud Vision (DECIDED - see Pre-implementation Log)
     - Is the accuracy tradeoff worth it?
 
-- cron vs launchd (macOS scheduler) (DECIDED - info below)
+- cron vs launchd (macOS scheduler) (DECIDED - see Pre-implementation Log)
     - Which is more approachable?
 
 ---
 
-## File Structure (planned)
+## File Structure
 
 ```
 slack-to-calendar/
 ├── main.py              # orchestrates everything
 ├── slack_client.py      # connects to Slack, finds and downloads schedule file
-├── parser.py            # OCR + extract shifts from raw text
+├── parser.py            # extract shifts from table information via pdfplumber
 ├── calendar_client.py   # creates Google Calendar events
 ├── config.py            # API keys, name, channel ID, etc.
 ├── sync.log             # running log of every sync
@@ -50,7 +60,7 @@ slack-to-calendar/
 
 ---
 
-## Metrics to Track (for resume)
+## Metrics to Track (planned)
 - Weeks in use
 - Total shifts synced
 - Parsing errors caught and fixed
@@ -58,10 +68,10 @@ slack-to-calendar/
 
 ---
 
-## Notes / Decisions Log
+## Pre-implementation Notes / Decisions Log
 
 1:
-    Slack Web API - Allows for accesss to HTTP methods that can read from/write to Slack channels. Provides
+    Slack Web API - Allows for access to HTTP methods that can read from/write to Slack channels. Provides
                     basic interactions with Slack channels on an individually called basis.
     Slack Bolt SDK - Provides an application with the capabilities to react to Slack events and channels. 
                     Can use calls from the Slack Web API as well as event routing, connection management, and more
@@ -70,7 +80,7 @@ Decision: Slack Web API, this application will be triggered regularly and theref
         within the Slack channels being observed. In addition, since we will only be reading from one channel for a 
         specific kind of file, keeping the tools lean allows for simpler and more understandable code/structure.
 
-2:
+2: (DECISION SUPERSEDED, SEE IMPLEMENTATION LOG)
     Python Tesseract - Simple text recognition from images, processed data can be translated directly into String 
                         data. No need for any type of web/server communication so very lightweight. Accuracy can vary 
                         according to picture quality.
@@ -91,3 +101,15 @@ Decision: Cron will fit the uses of this application better. We can get around t
         scheduled program runs (will require WSL on setup).
 
 ---
+
+## Implementation Notes / Decisions Log
+
+1:
+    Python Tesseract + pdf2image - Allows for text extraction of raw unstructured text, and converts directly into
+                                    String data allowing for ease of use. Processing is done as a flat image without 
+                                    consideration for any kind of table structure, leading to errors and lost information.
+    pdfplumber - Allows for table extraction of structured text from PDFs, providing information such as row/columns that provides
+                structure for easy parsing of specific data.
+Decision: Since the structure of the pdf schedules sent out is a consistent and readable table, pdfplumber provides a much more
+        accurate and usable parsing of data. Pdfplumber also extracts the data locally without sending any information
+        to an external service, upholding the privacy of other workers.
