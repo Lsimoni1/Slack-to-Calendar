@@ -5,6 +5,8 @@ from google.auth.transport.requests import Request
 from config import MY_NAME, TIMEZONE
 from datetime import datetime
 import os
+import sys
+import logging
 
 def get_calendar_service():
     if not os.path.exists("token.json"):
@@ -19,14 +21,15 @@ def get_calendar_service():
                 credential.refresh(Request())
                 with open("token.json", "w") as f:
                     f.write(credential.to_json())
-            except:
-                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", "https://www.googleapis.com/auth/calendar")
-                credential = flow.run_local_server(port = 0)
-                with open("token.json", "w") as f:
-                    f.write(credential.to_json())
+            except Exception:
+                logging.error("Credentials need to be re-authenticated. Manual program launch is required.")
+                sys.exit()
     return build("calendar", "v3", credentials = credential)
 
 def create_events(dates, schedule):
+    if dates is None or schedule is None:
+        return
+
     service = get_calendar_service()
     if len(dates) > 8:
         next_month = dates[8]
