@@ -2,6 +2,7 @@
   config.py
   credentials.json
   token.json
+  sync.log
 
   # Python
   __pycache__/
