@@ -60,6 +60,18 @@ slack-to-calendar/
 
 ---
 
+## Pipeline
+```
+Cron triggers main.py
+  → slack_client.py checks channel for new schedule file
+  → downloads file if new
+  → parser.py runs table extraction on file, extracts user's shifts
+  → calendar_client.py creates Google Calendar events
+  → logs result to sync.log
+```
+
+---
+
 ## Metrics to Track (planned)
 - Weeks in use
 - Total shifts synced
