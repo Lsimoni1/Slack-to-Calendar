@@ -1,29 +1,33 @@
 import config
 from slack_sdk import WebClient
 import requests
+from datetime import datetime, timedelta
 
 slack_token = config.SLACK_BOT_TOKEN
 slack_channel = config.SLACK_CHANNEL_ID
 client = WebClient(token = slack_token)
 
+#set a floor for the timestamp to only fetch messages from the last 3 months
+ts_floor = datetime.now() - timedelta(days=90)
+ts_floor = float(ts_floor.timestamp())
 
-def fetch_new_schedule():
+def fetch_new_schedules():
     messages = client.conversations_history(channel = slack_channel)
     files = []
 
     try:
         with open("latest_processed_file", "x") as f:
-            f.write("0")
+            f.write("")
     except:
         pass
 
     with open("latest_processed_file") as f:
         latest_ts = f.read()
 
-    if latest_ts == "0":
+    if not latest_ts.strip():
         for message in messages["messages"]:
             if "files" in message:
-                if len(files) < 10:
+                if len(files) < 10 and float(message["ts"]) > ts_floor:
                     files.append(message)
     else:
         current_ts_set = set()
@@ -33,7 +37,7 @@ def fetch_new_schedule():
                 latest_ts = line.split()[0]
         for message in messages["messages"]:
             if "files" in message: 
-                if message["ts"] > latest_ts and message["ts"] not in current_ts_set:
+                if message["ts"] > latest_ts and message["ts"] not in current_ts_set and float(message["ts"]) > ts_floor:
                     files.append(message)
 
     if not files:
