@@ -42,7 +42,8 @@ def fetch_new_schedules():
 
     if not files:
         return None
-    
+
+    files.sort(key = lambda x: float(x["ts"]))
     for file in files:
         with open("latest_processed_file", "a") as f:
             f.write(file["ts"] + " UNPROCESSED\n")
@@ -60,7 +61,7 @@ def download_schedules(ts):
         f.write(response.content)
 
     return "current_schedule"
-    
+
 
     
         

@@ -16,22 +16,24 @@ def main():
         logging.info(end_message)
         return
 
-    ts_set = set()
+    ts_list = []
     try:
         with open("latest_processed_file") as f:
             for line in f:
                 if line.split()[1] == "UNPROCESSED":
-                    ts_set.add(line.split()[0])
+                    ts_list.append(line.split()[0])
     except Exception:
-        pass
+        logging.error("Error reading latest_processed_file.", exc_info=True)
+        logging.info(end_message)
+        return
 
-    if not ts_set:
+    if not ts_list:
         logging.info("No new schedules found.")
         logging.info(end_message)
         return
 
     #main loop to process each schedule
-    for ts in ts_set:
+    for ts in ts_list:
         schedule_file = download_schedules(ts)
         if schedule_file is None:
             logging.info("No new schedule found.")
