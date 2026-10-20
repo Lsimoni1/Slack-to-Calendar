@@ -2,6 +2,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
+from googleapiclient.errors import HttpError
 from config import MY_NAME, TIMEZONE
 from datetime import datetime
 import os
@@ -79,15 +80,18 @@ def create_events(dates, schedule):
                     end_time = end_time.replace("a", ":00AM")
                 else:
                     end_time = end_time + ":00AM"
-            
+
             formatted_start_time = datetime.strptime(str(year) + month + str(day) + start_time, "%Y%B%d%I:%M%p")
             formatted_end_time = datetime.strptime(str(year) + month + str(day) + end_time, "%Y%B%d%I:%M%p")
+
+            event_id = formatted_start_time.strftime("%Y%m%d")
             
             formatted_start_time = datetime.strftime(formatted_start_time, "%Y-%m-%dT%H:%M:%S")
             formatted_end_time = datetime.strftime(formatted_end_time, "%Y-%m-%dT%H:%M:%S")
 
             event = {
                 "summary" : "Work @ Bloom Coffee and Kitchen",
+                "id": event_id,
                 "start": {
                     "dateTime": formatted_start_time,
                     "timeZone" : TIMEZONE
@@ -97,5 +101,11 @@ def create_events(dates, schedule):
                     "timeZone": TIMEZONE
                 }
             }
-            
-            service.events().insert(calendarId = "primary", body = event).execute()
+
+            try:
+                service.events().insert(calendarId = "primary", body = event).execute()
+            except HttpError as e:
+                if e.resp.status == 409:
+                    logging.info(f"Event for {month} {day} already exists. Skipping.")
+                else:
+                    raise
