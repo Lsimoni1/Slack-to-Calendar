@@ -28,6 +28,7 @@ def pdf_to_dates(file):
         for k, v in months.items(): 
             if k in row[0]:
                 row[0] = v
+                row[1:] = [x.split()[0] for x in row[1:]]
                 return row
     return None
 
