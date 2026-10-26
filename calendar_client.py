@@ -23,7 +23,7 @@ def get_calendar_service():
                 with open("token.json", "w") as f:
                     f.write(credential.to_json())
             except Exception:
-                logging.error("Credentials need to be re-authenticated. Manual program launch is required.")
+                logging.error("Credentials need to be re-authenticated. Manual program launch is required. (Don't forget to delete token.json first!)")
                 sys.exit()
     return build("calendar", "v3", credentials = credential)
 
@@ -35,7 +35,8 @@ def create_events(dates, schedule):
     if len(dates) > 8:
         next_month = dates[8]
     info = tuple(zip(dates, schedule))
-    year = datetime.now().year
+
+    today = datetime.now()
 
     for pair in info:
         if MY_NAME in pair:
@@ -48,6 +49,16 @@ def create_events(dates, schedule):
             if day == "1":
                 month = next_month
             time = pair[1].split("-")
+
+            delta_min = 365
+            potential_event = str(today.year) + month + day
+            potential_event_dt = datetime.strptime(potential_event, "%Y%B%d")
+            for x in range(3):
+                candidate_year = today.year - 1 + x
+                delta = abs(potential_event_dt.replace(year = candidate_year) - today)
+                if delta.days < delta_min:
+                    delta_min = delta.days
+                    year = candidate_year
 
             start_time = time[0]
             if ":" in start_time:
@@ -84,8 +95,8 @@ def create_events(dates, schedule):
             formatted_start_time = datetime.strptime(str(year) + month + str(day) + start_time, "%Y%B%d%I:%M%p")
             formatted_end_time = datetime.strptime(str(year) + month + str(day) + end_time, "%Y%B%d%I:%M%p")
 
-            event_id = formatted_start_time.strftime("%Y%m%d")
-            
+            event_id = datetime.strftime(formatted_start_time, "%Y%m%d")
+
             formatted_start_time = datetime.strftime(formatted_start_time, "%Y-%m-%dT%H:%M:%S")
             formatted_end_time = datetime.strftime(formatted_end_time, "%Y-%m-%dT%H:%M:%S")
 
