@@ -51,12 +51,18 @@ def fetch_new_schedules():
 
 def download_schedules(ts):
     message = client.conversations_history(channel = slack_channel, oldest = ts, latest = ts, inclusive = True)
+    if not message["messages"]:
+        raise ValueError("No message found with timestamp: " + ts)
+    if "files" not in message["messages"][0]:
+        raise ValueError("No file found in message with timestamp: " + ts)
     url = message["messages"][0]["files"][0]["url_private"]
     headers = {
         "Authorization" : "Bearer " + slack_token
     }
-    response = requests.get(url, headers = headers)
-
+    
+    response = requests.get(url, headers = headers, timeout=10)
+    response.raise_for_status()
+  
     with open("current_schedule", "wb") as f:
         f.write(response.content)
 

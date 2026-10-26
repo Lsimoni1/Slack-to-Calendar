@@ -18,7 +18,7 @@ def pdf_to_schedule(file):
     for row in data:
         if row[0] == config.MY_NAME:
             return row
-    return None
+    raise ValueError("No schedule row found for " + config.MY_NAME + " in the pdf file: " + file)
 
 def pdf_to_dates(file):
     pdf = pdfplumber.open(file)
@@ -30,15 +30,13 @@ def pdf_to_dates(file):
                 row[0] = v
                 row[1:] = [x.split()[0] for x in row[1:]]
                 return row
-    return None
+    raise ValueError("No month row found in the pdf file: " + file)
 
 def sort_dates(dates):
     month = dates[0]
-    try:
-        if dates.index("1") > 1:
-            month_value = datetime.strptime(month, "%B").month + 1
-            if month_value > 12:
-                month_value = 1
-            dates.append(datetime.strptime(str(month_value), "%m").strftime("%B"))
-    except:
-        return
+    days = dates[2:]
+    if "1" in days:
+        month_value = datetime.strptime(month, "%B").month + 1
+        if month_value > 12:
+            month_value = 1
+        dates.append(datetime.strptime(str(month_value), "%m").strftime("%B"))

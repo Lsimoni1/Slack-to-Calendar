@@ -34,30 +34,28 @@ def main():
 
     #main loop to process each schedule
     for ts in ts_list:
-        schedule_file = download_schedules(ts)
-        if schedule_file is None:
-            logging.info("No new schedule found.")
-            logging.info(end_message)
-            continue
-        else:
-            print("file " + schedule_file)
 
-        dates = pdf_to_dates(schedule_file)
-        if dates is None:
-            logging.error("Dates not properly extracted from pdf.")
-            logging.info(end_message)
+        try:
+            schedule_file = download_schedules(ts)
+            print("file " + schedule_file)
+        except Exception:
+            logging.error("Error downloading schedule at timestamp: " + ts , exc_info=True)
             continue
-        else:
+
+        try:
+            dates = pdf_to_dates(schedule_file)
             sort_dates(dates)
             print("dates " + str(dates))
-
-        schedule = pdf_to_schedule(schedule_file)
-        if schedule is None:
-            logging.error("Schedule not properly extracted from pdf.")
-            logging.info(end_message)
+        except Exception:
+            logging.error("Error extracting dates from schedule at timestamp: " + ts, exc_info=True)
             continue
-        else:
+
+        try:
+            schedule = pdf_to_schedule(schedule_file)
             print("schedule " + str(schedule))
+        except Exception:
+            logging.error("Error extracting schedule from pdf at timestamp: " + ts, exc_info=True)
+            continue
 
         try:
             create_events(dates, schedule)
