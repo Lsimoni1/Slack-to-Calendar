@@ -76,14 +76,18 @@ def main():
         with open("latest_processed_file", "r") as f:
             full_file = f.readlines()
         processed_files = [line for line in full_file if line.split()[1] == "PROCESSED"]
+        unprocessed_files = [line for line in full_file if line.split()[1] == "UNPROCESSED"]
     except Exception:
         logging.error("Error reading latest_processed_file.", exc_info=True)
+        logging.info(end_message)
+        return
 
     try:
-        if len(processed_files) > 5:
-            with open("latest_processed_file", "w") as f:
-                for line in processed_files[-5:]:
-                    f.write(line)
+        remaining_files = processed_files[-5:] + unprocessed_files
+        remaining_files.sort(key=lambda x: float(x.split()[0]))
+        with open("latest_processed_file", "w") as f:
+            for line in remaining_files:
+                f.write(line)
     except Exception:
         logging.error("Error writing to latest_processed_file.", exc_info=True)
 
