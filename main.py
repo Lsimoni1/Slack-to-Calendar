@@ -16,46 +16,46 @@ def main():
         logging.info(end_message)
         return
 
-    ts_set = set()
+    ts_list = []
     try:
         with open("latest_processed_file") as f:
             for line in f:
                 if line.split()[1] == "UNPROCESSED":
-                    ts_set.add(line.split()[0])
+                    ts_list.append(line.split()[0])
     except Exception:
-        pass
+        logging.error("Error reading latest_processed_file.", exc_info=True)
+        logging.info(end_message)
+        return
 
-    if not ts_set:
+    if not ts_list:
         logging.info("No new schedules found.")
         logging.info(end_message)
         return
 
     #main loop to process each schedule
-    for ts in ts_set:
-        schedule_file = download_schedules(ts)
-        if schedule_file is None:
-            logging.info("No new schedule found.")
-            logging.info(end_message)
-            continue
-        else:
-            print("file " + schedule_file)
+    for ts in ts_list:
 
-        dates = pdf_to_dates(schedule_file)
-        if dates is None:
-            logging.error("Dates not properly extracted from pdf.")
-            logging.info(end_message)
+        try:
+            schedule_file = download_schedules(ts)
+            print("file " + schedule_file)
+        except Exception:
+            logging.error("Error downloading schedule at timestamp: " + ts , exc_info=True)
             continue
-        else:
+
+        try:
+            dates = pdf_to_dates(schedule_file)
             sort_dates(dates)
             print("dates " + str(dates))
-
-        schedule = pdf_to_schedule(schedule_file)
-        if schedule is None:
-            logging.error("Schedule not properly extracted from pdf.")
-            logging.info(end_message)
+        except Exception:
+            logging.error("Error extracting dates from schedule at timestamp: " + ts, exc_info=True)
             continue
-        else:
+
+        try:
+            schedule = pdf_to_schedule(schedule_file)
             print("schedule " + str(schedule))
+        except Exception:
+            logging.error("Error extracting schedule from pdf at timestamp: " + ts, exc_info=True)
+            continue
 
         try:
             create_events(dates, schedule)
@@ -74,14 +74,18 @@ def main():
         with open("latest_processed_file", "r") as f:
             full_file = f.readlines()
         processed_files = [line for line in full_file if line.split()[1] == "PROCESSED"]
+        unprocessed_files = [line for line in full_file if line.split()[1] == "UNPROCESSED"]
     except Exception:
         logging.error("Error reading latest_processed_file.", exc_info=True)
+        logging.info(end_message)
+        return
 
     try:
-        if len(processed_files) > 5:
-            with open("latest_processed_file", "w") as f:
-                for line in processed_files[-5:]:
-                    f.write(line)
+        remaining_files = processed_files[-5:] + unprocessed_files
+        remaining_files.sort(key=lambda x: float(x.split()[0]))
+        with open("latest_processed_file", "w") as f:
+            for line in remaining_files:
+                f.write(line)
     except Exception:
         logging.error("Error writing to latest_processed_file.", exc_info=True)
 

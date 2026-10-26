@@ -42,7 +42,8 @@ def fetch_new_schedules():
 
     if not files:
         return None
-    
+
+    files.sort(key = lambda x: float(x["ts"]))
     for file in files:
         with open("latest_processed_file", "a") as f:
             f.write(file["ts"] + " UNPROCESSED\n")
@@ -50,17 +51,23 @@ def fetch_new_schedules():
 
 def download_schedules(ts):
     message = client.conversations_history(channel = slack_channel, oldest = ts, latest = ts, inclusive = True)
+    if not message["messages"]:
+        raise ValueError("No message found with timestamp: " + ts)
+    if "files" not in message["messages"][0]:
+        raise ValueError("No file found in message with timestamp: " + ts)
     url = message["messages"][0]["files"][0]["url_private"]
     headers = {
         "Authorization" : "Bearer " + slack_token
     }
-    response = requests.get(url, headers = headers)
-
+    
+    response = requests.get(url, headers = headers, timeout=10)
+    response.raise_for_status()
+  
     with open("current_schedule", "wb") as f:
         f.write(response.content)
 
     return "current_schedule"
-    
+
 
     
         
